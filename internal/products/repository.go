@@ -26,9 +26,10 @@ func NewRepo(db *sql.DB) Repository {
 }
 
 func (r *repository) Store(product domain.Product) (domain.Product, error) { // se inicializa la base
+
 	stmt, err := r.db.Prepare("INSERT INTO products(name, type, count, price) VALUES( ?, ?, ?, ? )") // se prepara la sentencia SQL a ejecutar
 	if err != nil {
-		log.Fatal(err)
+		return domain.Product{}, err
 	}
 	defer stmt.Close() // se cierra la sentencia al terminar. Si quedan abiertas se genera consumos de memoria
 	var result sql.Result
