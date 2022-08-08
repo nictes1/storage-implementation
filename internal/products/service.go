@@ -7,7 +7,7 @@ import (
 type Service interface {
 	Store(p domain.Product) (domain.Product, error)
 	GetOne(id int) (domain.Product, error)
-	Update(product domain.Product) (domain.Product, error)
+	Update(id int, name, productType string, count int, price float64) (domain.Product, error)
 	GetAll() ([]domain.Product, error)
 	Delete(id int) error
 }
@@ -50,12 +50,8 @@ func (s *service) GetAll() ([]domain.Product, error) {
 	return product, err
 }
 
-func (s *service) Update(product domain.Product) (domain.Product, error) {
-	product, err := s.product.Update(product)
-	if err != nil {
-		return domain.Product{}, err
-	}
-	return product, err
+func (s *service) Update(id int, name, productType string, count int, price float64) (domain.Product, error) {
+	return s.product.Update(id, name, productType, count, price)
 }
 
 func (s *service) Delete(id int) error {

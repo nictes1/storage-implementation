@@ -17,6 +17,13 @@ var (
 	ErrProductRecordsNotFound = errors.New("product records not found for the provided product id")
 )
 
+type request struct {
+	Name  string  `json:"nombre"`
+	Type  string  `json:"tipo"`
+	Count int     `json:"cantidad"`
+	Price float64 `json:"precio"`
+}
+
 type Product struct {
 	productService products.Service
 }
@@ -81,33 +88,25 @@ func (p *Product) Store() gin.HandlerFunc {
 }
 
 func (p *Product) Update() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		id, ok := c.Params.Get("id")
-		if !ok {
-			web.Error(c, http.StatusInternalServerError, "error: unable to retrieve 'id' param from URL")
-			return
-		}
-		_, err := strconv.ParseInt(id, 10, 0)
+	return func(ctx *gin.Context) {
+		var req request
+		id, err := strconv.Atoi(ctx.Param("id"))
 		if err != nil {
-			web.Error(c, http.StatusBadRequest, "error: provided id '%s' is not an integer", id)
-			return
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		}
 
-		var productToUpdate domain.Product
-		if err := c.ShouldBindJSON(&productToUpdate); err != nil {
-			web.Error(c, http.StatusBadRequest, "error: %s", err.Error())
+		if err := ctx.ShouldBindJSON(&req); err != nil {
+			ctx.JSON(404, gin.H{
+				"error": err.Error(),
+			})
 			return
 		}
-		updatedProduct, err := p.productService.Update(productToUpdate)
+		p, err := p.productService.Update(id, req.Name, req.Type, req.Count, req.Price)
 		if err != nil {
-			if err.Error() == "product not found" {
-				web.Error(c, http.StatusNotFound, "error: %s", err.Error())
-				return
-			}
-			web.Error(c, http.StatusInternalServerError, "error: %s", err.Error())
+			ctx.JSON(404, gin.H{"error": err.Error()})
 			return
 		}
-		web.Success(c, http.StatusOK, updatedProduct)
+		ctx.JSON(200, p)
 	}
 }
 
