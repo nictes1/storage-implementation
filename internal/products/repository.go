@@ -1,11 +1,15 @@
 package products
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/nictes1/storage-implementation/internal/domain"
 )
+
+var ErrNotImplemented = fmt.Errorf("not implemented")
 
 type Repository interface {
 	Store(domain.Product) (domain.Product, error)
@@ -13,6 +17,9 @@ type Repository interface {
 	Update(id int, name, productType string, count int, price float64) (domain.Product, error)
 	GetAll() ([]domain.Product, error)
 	Delete(id int) error
+	GetOneWithContext(ctx context.Context, id int) (domain.Product, error)
+	UpdateName(id int, name string) (domain.Product, error)
+	GetFullData(id int) (domain.Product, error)
 }
 
 type repository struct {
@@ -71,6 +78,10 @@ func (r *repository) Update(id int, name, productType string, count int, price f
 	return product, nil
 }
 
+func (r *repository) UpdateName(id int, name string) (domain.Product, error) {
+	return domain.Product{}, ErrNotImplemented
+}
+
 const (
 	GetAllProducts = "SELECT * FROM products"
 )
@@ -94,6 +105,39 @@ func (r *repository) GetAll() ([]domain.Product, error) {
 		products = append(products, product)
 	}
 	return products, nil
+}
+
+func (r *repository) GetFullData(id int) (domain.Product, error) {
+	var product domain.Product
+	innerJoin := "SELECT products.id, products.name, products.type, products.count, products.price, warehouses.name, warehouses.adress " +
+		"FROM products INNER JOIN warehouses ON products.id_warehouse = warehouses.id " +
+		"WHERE products.id = ?"
+	rows, err := r.db.Query(innerJoin, id)
+	if err != nil {
+		return product, err
+	}
+	for rows.Next() {
+		if err := rows.Scan(&product.ID, &product.Name, &product.Type, &product.Count, &product.Price, &product.Warehouse,
+			&product.WarehouseAdress); err != nil {
+			return product, err
+		}
+	}
+	return product, nil
+}
+
+func (r *repository) GetOneWithContext(ctx context.Context, id int) (domain.Product, error) {
+	var product domain.Product
+	rows, err := r.db.QueryContext(ctx, "select id, name, type, count, price from products where id = ?", id)
+
+	if err != nil {
+		return product, err
+	}
+	for rows.Next() {
+		if err := rows.Scan(&product.ID, &product.Name, &product.Type, &product.Count, &product.Price); err != nil {
+			return product, err
+		}
+	}
+	return product, nil
 }
 
 func (r *repository) Delete(id int) error { // se inicializa la base
