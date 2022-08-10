@@ -52,7 +52,7 @@ func (r *repository) Store(product domain.Product) (domain.Product, error) { // 
 func (r *repository) GetOne(id int) (domain.Product, error) {
 	var product domain.Product
 
-	rows, err := r.db.Query("SELECT id, name, type, count, price FROM products WHERE id = ?", id)
+	rows, err := r.db.Query("SELECT * FROM products WHERE id=?", id)
 	if err != nil {
 		return domain.Product{}, err
 	}
@@ -141,7 +141,8 @@ func (r *repository) GetOneWithContext(ctx context.Context, id int) (domain.Prod
 }
 
 func (r *repository) Delete(id int) error { // se inicializa la base
-	stmt, err := r.db.Prepare("DELETE FROM products WHERE id = ?") // se prepara la sentencia SQL a ejecutar
+	stmt, err := r.db.Prepare("DELETE FROM products WHERE id=?") // se prepara la sentencia SQL a ejecutar
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -150,5 +151,6 @@ func (r *repository) Delete(id int) error { // se inicializa la base
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
